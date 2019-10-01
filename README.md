@@ -24,5 +24,5 @@ other than that - no big readme here, you have the source and I'm tired.
 Mail back any bugs, fixes, enhancements, whatever and I'll incorporate
 appropriate ones in. 
 
-mudge@l0pht.com
+mudge at l0pht.com
 1/8/99

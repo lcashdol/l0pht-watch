@@ -9,7 +9,7 @@ void usage(char *progname){
   else
     proggie = progname;
 
-  printf("Usage: %s (ver 1.1) [-d <dir> [-c|C <file> -D <dir>]]\n", proggie);
+  printf("Usage: %s (ver 1.1.1) [-d <dir> [-c|C <file> -D <dir>]]\n", proggie);
   printf("Author: mudge@l0pht.com\n\n");
   printf("     -d <directory>    Directory to monitor (defaults to /tmp)\n");
   printf("     -c <filename>     File to make a copy of upon seeing in\n");

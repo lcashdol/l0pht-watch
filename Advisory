@@ -1,0 +1,198 @@
+
+                  L0pht Security Tool and (mini)Advisory
+
+                       Advisory released Jan 8 1999
+
+             Application: A tool designed to monitor directory
+                activity, copy transient files based upon regular
+                expression matching, syslog upon seeing links created,
+                etc. etc.
+
+             Severity: Just about every OS out there is replete
+               with programs that insecurely handle files in
+               publicly accesible temporary directories.
+
+                         Author: mudge@l0pht.com
+                  http://www.l0pht.com/advisories.html
+
+
+Overview :
+
+ One of the most overlooked areas of exploit attention seems to be the use
+ of public holding or scratch areas. This tool allows : 
+
+  . The white-hat: to monitor various directories and optionally log 
+    upon seeing suspicious activity. 
+
+  . The grey-hat: to run and collect the information to find system state
+    and information about user trends or new suspicious programs
+
+  . The black hat: to ease copying of sensitive, potentially transient, data
+    and to aid in locating exploitable programs and creating said exploits
+
+ Needless to say. It's good to feel comfortable wearing any colour hat.
+
+ The tool is available at http://www.L0pht.com/advisories/l0pht-watch.tar.gz
+ 
+Description :
+
+A common shortcoming of programs is how they treat data and files in temporary
+or holding areas. Many people have been silently exploiting many of these
+problems for some time now. In a quick-throw-together way I decided to 
+write a program to both help analyze activity in these scratch areas. 
+The program is not the best way to do it for an individual architecture (which
+would most likely be to hook in front of the system call entry points for
+the appropriate file manipulation calls so as not to miss anything that 
+happens). This was done intentionally to allow quick porting to various
+platforms at the loss of a small amount of accuracy.
+
+The problems are of various types and severities. For example, people
+calling open(2) while using O_CREAT without O_EXCL, mktemp(3C) being
+too predictable, access(2) calls on files and trusting that the information
+is still the same later on in ones code, stat(2) as opposed to fstat(2) or
+lstat(2) in some situations. Other problems include placing sensitive data
+in public places with incorrect permissions.
+
+These problems happen not only in code written by novice coders but many times 
+by experienced security conscious programmers as well. 
+
+Ask Marcus Ranum about the time Casper Dik and I found problems with his 
+secure code examples in a public talk [side note: Marcus is a good security 
+conscious programmer - it simply became a case of staring at his own work 
+and not seeing the bugs that pop out to a new set of eyes. Much akin to 
+proofreading ones own papers].
+
+Ask the l0phtcrack development team that recently had a temporary file problem
+pointed out to them on the windows platform software [side note: the problem
+was in the GUI portion of the code, which I did not write. This is not to
+say that I haven't had problems with my code in the past, just that this
+was not one of mine, which is contrary to what a couple of outspoken people
+seem to have thought. ;) We were actually happy that we had the opportunity 
+to react to the report in the way we always wanted other companies to react 
+to similar reports. We hope we did alright by everyone. In addition, I 
+have chopped off another finger of the person who wrote the code - call 
+it our 'internal incentive program'].
+
+The tool opens the directory specified (defaults to /tmp) and continuously
+reads the contents. Upon first read it spits out the list that it has
+built (it attempts an ls -l style output). From that point on it shows
+any additions or deletions that it sees prefaced with '+' or '-' accordingly.
+Other options are for copying files that it witnesses and match regular
+expressions, and daemonizing itself and subsequently syslog(3)ing anytime
+a symbolic link is created in the directory being watched. I have watched
+many, many temp files and have not seen legitimate uses of symbolic links
+being created in them other than for exploit purposes.
+
+I suppose the best way to see how / why / what the tool does is a quick 
+example of some curious behaviour that it witnessed in Solaris 2.5 and
+the subsequent silent fix that seems to have been implemented in Solaris
+2.6 [note: I looked through Sun's website for references of a patch but
+could not find one - it is possible that it is there and I missed it. 
+However, it seems more likely that Sun fixed the problem for 2.6 and instead
+of announcing the problem and issuing a patch for previous versions let
+the 2.6 modified version go by as a 'silent fix'. This would imply a 
+willingess to let users of 2.5 remain vulnerable. There are, hopefully,
+other reasons why this would have happened.]
+
+The programs to be examined are crontab(1) and cron(1M).
+
+On Solaris 2.5 we see the following behaviour for crontab when it is
+invoked multiple times with -e:
+
++  -rw-------  1  mudge    other    0      Jan  8 00:32 /tmp/crontaba0074F
+-  -rw-------  1  mudge    other    0      Jan  8 00:32 /tmp/crontaba0074F
++  -rw-------  1  mudge    other    58     Jan  8 00:32 /tmp/crontaba0074J
+-  -rw-------  1  mudge    other    58     Jan  8 00:32 /tmp/crontaba0074J
++  -rw-------  1  mudge    other    58     Jan  8 00:32 /tmp/crontaba0074N
+-  -rw-------  1  mudge    other    58     Jan  8 00:32 /tmp/crontaba0074N
++  -rw-------  1  mudge    other    58     Jan  8 00:32 /tmp/crontaba0074R
+-  -rw-------  1  mudge    other    58     Jan  8 00:32 /tmp/crontaba0074R
+
+As one can see, the random value that is created is far from random. In fact,
+there are most likely 4 processes invoked throughout the life of crontab
+and it's invocation of my EDITOR (vi). Hence the only dynamic value above,
+which is the last character, is incremented by 4 each time.
+
+On a Solaris 2.6 machine one notices the following behaviour:
+
++  -rw-------  1  mudge    staff    0      Jan  8 08:17 /tmp/crontab0S0jWF
+-  -rw-------  1  mudge    staff    0      Jan  8 08:17 /tmp/crontab0S0jWF
++  -rw-------  1  mudge    staff    0      Jan  8 08:17 /tmp/crontabsp9ND_
+-  -rw-------  1  mudge    staff    0      Jan  8 08:17 /tmp/crontabsp9ND_
++  -rw-------  1  mudge    staff    0      Jan  8 08:17 /tmp/crontab0GdcDB
+-  -rw-------  1  mudge    staff    0      Jan  8 08:17 /tmp/crontab0GdcDB
++  -rw-------  1  mudge    staff    0      Jan  8 08:17 /tmp/crontabgQ349_
+-  -rw-------  1  mudge    staff    0      Jan  8 08:17 /tmp/crontabgQ349_
+
+The above 2.6 data looks much better than the 2.5 data.
+
+Let us take a look at a situation where root has a recurring cron job that
+runs every minute. We will see that cron(1M) will exhibit similar behaviour
+as crontab(1) did above:
+
+On the Solaris 2.5 machine:
+
++  -rw-------  1  root     other    0      Jan  8 00:43 /tmp/croutTGEa0002o
+-  -rw-------  1  root     other    0      Jan  8 00:43 /tmp/croutTGEa0002o
++  -rw-------  1  root     other    0      Jan  8 00:44 /tmp/croutUGEa0002o
+-  -rw-------  1  root     other    0      Jan  8 00:44 /tmp/croutUGEa0002o
++  -rw-------  1  root     other    0      Jan  8 00:45 /tmp/croutWGEa0002o
+-  -rw-------  1  root     other    0      Jan  8 00:45 /tmp/croutWGEa0002o
++  -rw-------  1  root     other    0      Jan  8 00:46 /tmp/croutXGEa0002o
+-  -rw-------  1  root     other    0      Jan  8 00:46 /tmp/croutXGEa0002o
++  -rw-------  1  root     other    0      Jan  8 00:47 /tmp/croutYGEa0002o
+-  -rw-------  1  root     other    0      Jan  8 00:47 /tmp/croutYGEa0002o
+
+[it should be noted that with systems without a lot of cron activity (the 
+cron activity can easilly be determined by running temp-watch for a day or
+so and looking at the crout activity) display the same problems between
+larger time intervals]
+
+As the reader can see, the only value being incremented in the above example
+is the 11th digit. Completely predictable.
+
+Let us again take a look at a Solaris 2.6 machine:
+
++  -rw-------  1  root     other    0      Jan  8 08:43 /tmp/croutZBA0M9pVP
+-  -rw-------  1  root     other    0      Jan  8 08:43 /tmp/croutZBA0M9pVP
++  -rw-------  1  root     other    0      Jan  8 08:43 /tmp/croutACAnHfw3_
+-  -rw-------  1  root     other    0      Jan  8 08:43 /tmp/croutACAnHfw3_
++  -rw-------  1  root     other    0      Jan  8 08:43 /tmp/croutBCA0Fy3q8
+-  -rw-------  1  root     other    0      Jan  8 08:43 /tmp/croutBCA0Fy3q8
++  -rw-------  1  root     other    0      Jan  8 08:44 /tmp/croutCCAl2fDT_
+-  -rw-------  1  root     other    0      Jan  8 08:44 /tmp/croutCCAl2fDT_
++  -rw-------  1  root     other    0      Jan  8 08:44 /tmp/croutDCA0FPrOc
+-  -rw-------  1  root     other    0      Jan  8 08:44 /tmp/croutDCA0FPrOc
+
+Again - this looks much better in comparison.
+
+Why does any of this matter? What happens when the filename about to be
+created is a symbolic link? In the above cases the link is followed and
+the file created. What happens if the persons umask is less strict? The
+programs above inherit it. If you cannot see where this is going then
+you might think about slowly getting up from the desk and asking for
+a job transfer if you are a Unix security person or systems administrator
+with a security component.
+
+Try running the tool for a day and look through the output. You will most
+likely be surprised by the droppings that are created and how many different
+programs do not even make a paultry attempt to check for file existence or
+create a random program name [ ie strings /usr/sbin/rpcbind | grep tmp to
+see what fun one can have when rpcbind catches a signal and dies creating
+those files as root and following links, there are many easy rootin' 
+erobs people will find too ].
+
+Anyway - the tool, and it's source are free. As people might be able to tell,
+it's getting late here so this message is becoming even more thin near the 
+bottom as I try to wrap up and experience this thing called sleep that I 
+catch people talking about.
+
+I hope people find it useful. 
+
+cheers,
+
+mudge@l0pht.com
+---------------
+For more L0pht (that's L - zero - P - H - T) advisories check out:
+http://www.l0pht.com/advisories.html
+---------------

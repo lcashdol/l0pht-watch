@@ -11,6 +11,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <string.h>
 
 #if defined (REGEXPR_3G)
 #include <regexpr.h>

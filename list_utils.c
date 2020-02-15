@@ -144,7 +144,7 @@ printnode(struct listStruct *list, int action){
   getfilemodes(&list->statbuf, filemodes);
 
   sprintf(outputStr,"%.2s %-11.20s %-2d %-8.20s %-8.20s %-6ld %-10.20s "
-                    "%.20s",
+                    "%s",
           (action == ADDITION) ? "+ " : "- ", filemodes, 
           (int)list->statbuf.st_nlink, username, groupname,
           (long)list->statbuf.st_size, timehold, list->filename);

@@ -28,7 +28,7 @@ int main(int argc, char **argv){
   char *watchdir = "/tmp", *copyname=NULL, tmp1[MAXNAMLEN];
   char *destdir = watchdir, *ptr;
 #if defined (REGEXPR_3G)
-  char *expbuf;
+  char *expbuf=NULL;
 #else 
 #if defined (REGCOMP_3C)
   regex_t reg;
